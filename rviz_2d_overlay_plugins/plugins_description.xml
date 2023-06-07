@@ -15,4 +15,12 @@
         </description>
         <message_type>std_msgs/msg/Float32</message_type>
     </class>
+    <class name="rviz_2d_overlay_plugins/Performance"
+           type="rviz_2d_overlay_plugins::Performance"
+           base_class_type="rviz_common::Display">
+        <description>
+            Show performance.
+        </description>
+        <message_type>std_msgs/msg/Float32</message_type>
+    </class>
 </library>

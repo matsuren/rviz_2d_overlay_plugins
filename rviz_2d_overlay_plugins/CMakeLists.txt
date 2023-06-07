@@ -32,6 +32,7 @@ add_library(
         src/overlay_text_display.cpp
         src/overlay_utils.cpp
         src/pie_chart_display.cpp
+        src/performance.cpp
 )
 
 target_include_directories(
@@ -86,5 +87,9 @@ install(
 #install(
 #        DIRECTORY include/
 #        DESTINATION include
-#)
+#
+install(DIRECTORY icons
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()
