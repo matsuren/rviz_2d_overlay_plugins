@@ -35,7 +35,7 @@
  *********************************************************************/
 
 #include "pie_chart_display.h"
-
+#include <iomanip>
 #include <OgreMaterialManager.h>
 #include <OgreTextureManager.h>
 #include <OgreTexture.h>
@@ -177,7 +177,7 @@ namespace rviz_2d_overlay_plugins
 
   void PieChartDisplay::processMessage(std_msgs::msg::Float32::ConstSharedPtr msg)
   {
-    std::lock_guard lock(mutex_);
+      std::lock_guard<std::mutex> lock(mutex_);
 
     if (!overlay_->isVisible()) {
       return;
@@ -303,7 +303,7 @@ namespace rviz_2d_overlay_plugins
 
   void PieChartDisplay::updateSize()
   {
-    std::lock_guard lock(mutex_);
+      std::lock_guard<std::mutex> lock(mutex_);
     texture_size_ = size_property_->getInt();
     update_required_ = true;
   }
@@ -372,7 +372,7 @@ namespace rviz_2d_overlay_plugins
   
   void PieChartDisplay::updateTextSize()
   {
-      std::lock_guard lock(mutex_);
+      std::lock_guard<std::mutex> lock(mutex_);
     text_size_ = text_size_property_->getInt();
     QFont font;
     font.setPointSize(text_size_);

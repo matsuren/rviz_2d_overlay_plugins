@@ -1,48 +1,42 @@
 cmake_minimum_required(VERSION 3.8)
 project(rviz_2d_overlay_plugins)
 
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
-
 find_package(rviz_2d_overlay_msgs REQUIRED)
-
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(std_msgs REQUIRED)
 
-set(
-        headers_to_moc
-        include/overlay_text_display.hpp
-        include/pie_chart_display.h
-)
+set(CMAKE_AUTOMOC ON)
 
-foreach (header "${headers_to_moc}")
-    qt5_wrap_cpp(display_moc_files "${header}")
-endforeach ()
 
-set(
-        display_source_files
+add_library(
+        ${PROJECT_NAME} SHARED
         src/overlay_text_display.cpp
         src/overlay_utils.cpp
         src/pie_chart_display.cpp
 )
 
-add_executable(string_to_overlay_text src/string_to_overlay_text.cpp)
-ament_target_dependencies(string_to_overlay_text rclcpp std_msgs rviz_2d_overlay_msgs)
-
-add_library(
-        ${PROJECT_NAME} SHARED
-        ${display_moc_files}
-        ${display_source_files}
-)
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-
 target_include_directories(
         ${PROJECT_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:include>
         ${Qt5Widgets_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
@@ -52,6 +46,7 @@ target_link_libraries(
         ${PROJECT_NAME} PUBLIC
         rviz_ogre_vendor::OgreMain
         rviz_ogre_vendor::OgreOverlay
+        Qt5::Widgets
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -72,7 +67,7 @@ ament_target_dependencies(
         std_msgs
 )
 
-ament_export_include_directories(include)
+#ament_export_include_directories(include)
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
         rviz_common
@@ -88,17 +83,8 @@ install(
         INCLUDES DESTINATION include
 )
 
-install(
-        DIRECTORY include/
-        DESTINATION include
-)
-
-install(
-        TARGETS
-        string_to_overlay_text
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-ament_package(
-        CONFIG_EXTRAS "rviz_2d_overlay_plugins-extras.cmake"
-)
+#install(
+#        DIRECTORY include/
+#        DESTINATION include
+#)
+ament_package()
