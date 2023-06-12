@@ -200,7 +200,7 @@ namespace rviz_2d_overlay_plugins {
             // Remove too many text
             QFont font;
             font.setPointSize(text_size_);
-            int h_offset = QFontMetrics(font).height() + 1;
+            int h_offset = QFontMetrics(font).height() + 2;
             size_t max_num = std::max(int(h / h_offset), 8);
             while (text_queue_.size() > max_num)
             {
@@ -209,7 +209,7 @@ namespace rviz_2d_overlay_plugins {
             // Main drawing text
             int current_h_offset = 0;
             for(auto &text : text_queue_){
-                int v_offset = 10;
+                int v_offset = 50;
                 painter.drawStaticText(v_offset, current_h_offset, text);
                 current_h_offset += h_offset;
             }
