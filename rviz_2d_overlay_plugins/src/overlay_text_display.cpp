@@ -73,11 +73,6 @@ namespace rviz_2d_overlay_plugins {
                 "Overtake BG Color Properties", false,
                 "overtake color properties specified by message such as background color and alpha", this,
                 SLOT(updateOvertakeBGColorProperties()));
-        align_bottom_property_ = new rviz_common::properties::BoolProperty(
-                "Align Bottom", false, "align text with the bottom of the overlay region", this,
-                SLOT(updateAlignBottom()));
-        invert_shadow_property_ = new rviz_common::properties::BoolProperty(
-                "Invert Shadow", false, "make shadow lighter than original text", this, SLOT(updateInvertShadow()));
         hor_dist_property_ = new rviz_common::properties::IntProperty("hor_dist", 0, "horizontal distance to anchor",
                                                                       this, SLOT(updateHorizontalDistance()));
         ver_dist_property_ = new rviz_common::properties::IntProperty("ver_dist", 0, "vertical distance to anchor",
@@ -156,8 +151,6 @@ namespace rviz_2d_overlay_plugins {
         updateOvertakePositionProperties();
         updateOvertakeFGColorProperties();
         updateOvertakeBGColorProperties();
-        updateAlignBottom();
-        updateInvertShadow();
         updateHorizontalDistance();
         updateVerticalDistance();
         updateHorizontalAlignment();
@@ -192,7 +185,7 @@ namespace rviz_2d_overlay_plugins {
             QPainter painter(&Hud);
             painter.setRenderHint(QPainter::Antialiasing, true);
             painter.setPen(QPen(fg_color_, std::max(line_width_, 1), Qt::SolidLine));
-            uint16_t w = overlay_->getTextureWidth();
+            // uint16_t w = overlay_->getTextureWidth();
             uint16_t h = overlay_->getTextureHeight();
 
             // font
@@ -203,49 +196,24 @@ namespace rviz_2d_overlay_plugins {
                 font.setBold(true);
                 painter.setFont(font);
             }
-            if (text_.length() > 0) {
 
-                QColor shadow_color;
-                if (invert_shadow_)
-                    shadow_color = Qt::white; // fg_color_.lighter();
-                else
-                    shadow_color = Qt::black; // fg_color_.darker();
-                shadow_color.setAlpha(fg_color_.alpha());
-
-                std::string color_wrapped_text =
-                        (boost::format("<span style=\"color: rgba(%2%, %3%, %4%, %5%)\">%1%</span>") % text_ %
-                         fg_color_.red() % fg_color_.green() % fg_color_.blue() % fg_color_.alpha())
-                                .str();
-
-                // find a remove "color: XXX;" regex match to generate a proper shadow
-                std::regex color_tag_re("color:.+?;");
-                std::string null_char("");
-                std::string formatted_text_ = std::regex_replace(text_, color_tag_re, null_char);
-                std::string color_wrapped_shadow =
-                        (boost::format("<span style=\"color: rgba(%2%, %3%, %4%, %5%)\">%1%</span>") % formatted_text_ %
-                         shadow_color.red() % shadow_color.green() % shadow_color.blue() % shadow_color.alpha())
-                                .str();
-
-                QStaticText static_text(boost::algorithm::replace_all_copy(color_wrapped_text, "\n", "<br >").c_str());
-                static_text.setTextWidth(w);
-
-                painter.setPen(QPen(shadow_color, std::max(line_width_, 1), Qt::SolidLine));
-                QStaticText static_shadow(
-                        boost::algorithm::replace_all_copy(color_wrapped_shadow, "\n", "<br >").c_str());
-                static_shadow.setTextWidth(w);
-
-                if (!align_bottom_) {
-                    painter.drawStaticText(1, 1, static_shadow);
-                    painter.drawStaticText(0, 0, static_text);
-                } else {
-                    QStaticText only_wrapped_text(color_wrapped_text.c_str());
-                    QFontMetrics fm(painter.fontMetrics());
-                    QRect text_rect = fm.boundingRect(0, 0, w, h, Qt::TextWordWrap | Qt::AlignLeft | Qt::AlignTop,
-                                                      only_wrapped_text.text().remove(QRegExp("<[^>]*>")));
-                    painter.drawStaticText(1, h - text_rect.height() + 1, static_shadow);
-                    painter.drawStaticText(0, h - text_rect.height(), static_text);
-                }
+            // Remove too many text
+            QFont font;
+            font.setPointSize(text_size_);
+            int h_offset = QFontMetrics(font).height() + 1;
+            size_t max_num = std::max(int(h / h_offset), 8);
+            while (text_queue_.size() > max_num)
+            {
+                text_queue_.pop_front();
             }
+            // Main drawing text
+            int current_h_offset = 0;
+            for(auto &text : text_queue_){
+                int v_offset = 10;
+                painter.drawStaticText(v_offset, current_h_offset, text);
+                current_h_offset += h_offset;
+            }
+
             painter.end();
         }
         overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());
@@ -304,6 +272,15 @@ namespace rviz_2d_overlay_plugins {
         if (overlay_) {
             overlay_->setPosition(horizontal_dist_, vertical_dist_, horizontal_alignment_, vertical_alignment_);
         }
+
+        std::string color_wrapped_text =
+                (boost::format("<span style=\"color: rgba(%2%, %3%, %4%, %5%)\">%1%</span>") % text_ %
+                    fg_color_.red() % fg_color_.green() % fg_color_.blue() % fg_color_.alpha())
+                        .str();
+        QStaticText static_text(boost::algorithm::replace_all_copy(color_wrapped_text, "\n", "<br >").c_str());
+        static_text.setTextWidth(2000); // Big number to avoid new line
+        text_queue_.push_back(static_text);
+
         require_update_texture_ = true;
     }
 
@@ -380,19 +357,6 @@ namespace rviz_2d_overlay_plugins {
         }
     }
 
-    void OverlayTextDisplay::updateAlignBottom() {
-        if (align_bottom_ != align_bottom_property_->getBool()) {
-            require_update_texture_ = true;
-        }
-        align_bottom_ = align_bottom_property_->getBool();
-    }
-
-    void OverlayTextDisplay::updateInvertShadow() {
-        if (invert_shadow_ != invert_shadow_property_->getBool()) {
-            require_update_texture_ = true;
-        }
-        invert_shadow_ = invert_shadow_property_->getBool();
-    }
 
     void OverlayTextDisplay::updateVerticalDistance() {
         vertical_dist_ = ver_dist_property_->getInt();

@@ -90,6 +90,7 @@ namespace rviz_2d_overlay_plugins
     rviz_common::properties::FloatProperty* max_color_threshold_property_;
     rviz_common::properties::FloatProperty* med_color_threshold_property_;
     rviz_common::properties::BoolProperty* clockwise_rotate_property_;
+    rviz_common::properties::StringProperty* caption_property_;
 
     int left_;
     int top_;
@@ -137,6 +138,7 @@ namespace rviz_2d_overlay_plugins
     void updateMaxColorThreshold();
     void updateMedColorThreshold();
     void updateClockwiseRotate();
+    void updateCaption();
 
   private:
   };

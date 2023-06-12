@@ -50,7 +50,11 @@
     #include <std_msgs/msg/color_rgba.h>
 
     #include "overlay_utils.hpp"
+    #include <deque>
+    #include <QStaticText>
 #endif
+
+
 
 namespace rviz_2d_overlay_plugins {
     class OverlayTextDisplay : public rviz_common::RosTopicDisplay<rviz_2d_overlay_msgs::msg::OverlayText> {
@@ -68,8 +72,6 @@ namespace rviz_2d_overlay_plugins {
         bool overtake_fg_color_properties_;
         bool overtake_bg_color_properties_;
         bool overtake_position_properties_;
-        bool align_bottom_;
-        bool invert_shadow_;
         QColor bg_color_;
         QColor fg_color_;
         int text_size_;
@@ -82,6 +84,8 @@ namespace rviz_2d_overlay_plugins {
         HorizontalAlignment horizontal_alignment_;
         VerticalAlignment vertical_alignment_;
 
+        std::deque<QStaticText> text_queue_;
+
         virtual void onInitialize() override;
         virtual void onEnable() override;
         virtual void onDisable() override;
@@ -93,8 +97,6 @@ namespace rviz_2d_overlay_plugins {
         rviz_common::properties::BoolProperty *overtake_position_properties_property_;
         rviz_common::properties::BoolProperty *overtake_fg_color_properties_property_;
         rviz_common::properties::BoolProperty *overtake_bg_color_properties_property_;
-        rviz_common::properties::BoolProperty *align_bottom_property_;
-        rviz_common::properties::BoolProperty *invert_shadow_property_;
         rviz_common::properties::IntProperty *hor_dist_property_;
         rviz_common::properties::IntProperty *ver_dist_property_;
         rviz_common::properties::EnumProperty *hor_alignment_property_;
@@ -113,8 +115,6 @@ namespace rviz_2d_overlay_plugins {
         void updateOvertakePositionProperties();
         void updateOvertakeFGColorProperties();
         void updateOvertakeBGColorProperties();
-        void updateAlignBottom();
-        void updateInvertShadow();
         void updateHorizontalDistance();
         void updateVerticalDistance();
         void updateHorizontalAlignment();

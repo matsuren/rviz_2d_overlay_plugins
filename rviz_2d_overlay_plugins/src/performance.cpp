@@ -125,6 +125,11 @@ namespace rviz_2d_overlay_plugins
                                false,
                                "change the rotate direction",
                                this, SLOT(updateClockwiseRotate()));
+    caption_property_
+      = new rviz_common::properties::StringProperty("caption",
+                               "Put caption",
+                               "caption for visualization",
+                               this, SLOT(updateCaption()));
   }
 
   Performance::~Performance()
@@ -142,7 +147,6 @@ namespace rviz_2d_overlay_plugins
     std::stringstream ss;
     ss << "Performance" << count++;
     overlay_.reset(new rviz_2d_overlay_plugins::OverlayObject(ss.str()));
-    caption_text_ = ss.str();
     onEnable();
     updateSize();
     updateLeft();
@@ -162,8 +166,10 @@ namespace rviz_2d_overlay_plugins
     updateMaxColorThreshold();
     updateMedColorThreshold();
     updateClockwiseRotate();
+    updateCaption();
     overlay_->updateTextureSize(texture_size_, texture_size_ + caption_offset_);
     overlay_->hide();
+    caption_text_ = ss.str();
   }
 
   void Performance::update(float /* wall_dt */, float /* ros_dt */) {
@@ -437,6 +443,13 @@ namespace rviz_2d_overlay_plugins
   void Performance::updateClockwiseRotate()
   {
     clockwise_rotate_ = clockwise_rotate_property_->getBool();
+    update_required_ = true;
+
+  }
+
+  void Performance::updateCaption()
+  {
+    caption_text_ = caption_property_->getString().toStdString();
     update_required_ = true;
 
   }
