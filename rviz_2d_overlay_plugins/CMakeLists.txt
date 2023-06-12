@@ -25,6 +25,8 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(std_msgs REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 add_library(
@@ -33,6 +35,9 @@ add_library(
         src/overlay_utils.cpp
         src/pie_chart_display.cpp
         src/performance.cpp
+        src/teleopwidget.cpp
+        src/teleopwidget.ui
+        src/touchwidget.cpp
 )
 
 target_include_directories(

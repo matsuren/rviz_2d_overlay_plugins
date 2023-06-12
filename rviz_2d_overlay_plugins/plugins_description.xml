@@ -23,4 +23,14 @@
         </description>
         <message_type>std_msgs/msg/Float32</message_type>
     </class>
+
+    <class name="rviz_2d_overlay_plugins/TeleopPanel"
+           type="rviz_2d_overlay_plugins::TeleopWidget"
+           base_class_type="rviz_common::Panel">
+        <description>
+            Teleop panel
+        </description>
+    </class>
+
+    
 </library>
