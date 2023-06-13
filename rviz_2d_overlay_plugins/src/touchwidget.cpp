@@ -3,7 +3,6 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <iostream>
-#include <sstream>
 
 
 TouchWidget::TouchWidget(QWidget *parent)
@@ -107,8 +106,4 @@ void TouchWidget::mouseReleaseEvent( QMouseEvent* event )
 void TouchWidget::set_value(float x, float y){
     x_value=x;
     y_value=y;
-    std::ostringstream stm ;
-    stm << x << ","<<y;
-    QString text=QString::fromStdString(stm.str());
-    Q_EMIT modifyPosition(text);
 }

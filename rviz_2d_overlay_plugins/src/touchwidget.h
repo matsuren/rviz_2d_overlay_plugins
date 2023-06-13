@@ -26,9 +26,6 @@ public:
     virtual void mouseReleaseEvent(QMouseEvent* event);
     virtual void leaveEvent(QEvent* event);
     void set_value(float x, float y);
-
-Q_SIGNALS:
-    void modifyPosition(QString);
 };
 
 #endif // TOUCHWIDGET_H
