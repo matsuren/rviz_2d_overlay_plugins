@@ -40,6 +40,7 @@ public:
 public Q_SLOTS:
   void tick();
   void clicked_main_btn();
+  void clicked_chat_btn();
   void start_auto();
   void start_teleop(std::string target_name);
   void cancel_teleop();

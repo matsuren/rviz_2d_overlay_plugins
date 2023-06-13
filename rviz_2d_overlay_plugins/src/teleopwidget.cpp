@@ -4,6 +4,7 @@
 #include "touchwidget.h"
 #include <rviz_common/config.hpp>
 #include <rviz_common/display_context.hpp>
+#include <rviz_common/load_resource.hpp>
 #include <QLabel>
 #include <QTimer>
 #include <std_msgs/msg/empty.hpp>
@@ -19,13 +20,18 @@ TeleopWidget::TeleopWidget(QWidget* parent) : rviz_common::Panel(parent), ui(new
   ui->setupUi(this);
   touch_ = new TouchWidget();
   touch_->setEnabled(false);
-  ui->layout->addWidget(touch_);
+  ui->verticalLayout->addWidget(touch_);
 
+
+  // Setup connect
   QTimer* output_timer = new QTimer(this);
   connect(output_timer, SIGNAL(timeout()), this, SLOT(tick()));
   output_timer->start(100);
-
   connect(ui->btn, SIGNAL(clicked()), this, SLOT(clicked_main_btn()));
+  connect(ui->chat_btn, SIGNAL(clicked()), this, SLOT(clicked_chat_btn()));
+
+  // Setup appearance
+  ui->logo_label->setPixmap(rviz_common::loadPixmap("package://rviz_2d_overlay_plugins/icons/cafe_logo.png"));
   ui->status_line->setText(QString("Not active"));
   ui->btn->setStyleSheet("QPushButton {background-color:  white}");
 }
@@ -90,12 +96,17 @@ void TeleopWidget::clicked_main_btn()
   }
 }
 
+
+void TeleopWidget::clicked_chat_btn()
+{
+}
+
 void TeleopWidget::start_auto()
 {
   ui->btn->setText("Auto mode");
   ui->btn->setEnabled(false);
   ui->btn->setStyleSheet("");
-  ui->status_line->setText(QString::fromStdString(""));
+  ui->status_line->setText(QString::fromStdString("Working properly"));
   touch_->setEnabled(false);
   target_du_name_ = "";
 
@@ -108,11 +119,6 @@ void TeleopWidget::start_auto()
     msg->buttons.resize(11);
     msg->buttons[10] = 1;
     joy_publisher_->publish(*msg);
-    // for (size_t i = 0; i < 4; i++)
-    // {
-    //   // Make sure to reach to the excavator
-    //   joy_publisher_->publish(*msg);
-    // }
   }
 
   mode_ = Mode::AUTO;
