@@ -11,6 +11,7 @@
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int16.hpp>
+#include <std_msgs/msg/string.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -60,6 +61,10 @@ private:
   rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr ask_for_help_subscriber_;
   void ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg);
   std::string target_du_name_;
+
+  // The ROS publisher for chat server.
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr chat_publisher_;
+
 
 
   Mode mode_;

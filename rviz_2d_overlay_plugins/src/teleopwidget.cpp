@@ -22,7 +22,6 @@ TeleopWidget::TeleopWidget(QWidget* parent) : rviz_common::Panel(parent), ui(new
   touch_->setEnabled(false);
   ui->verticalLayout->addWidget(touch_);
 
-
   // Setup connect
   QTimer* output_timer = new QTimer(this);
   connect(output_timer, SIGNAL(timeout()), this, SLOT(tick()));
@@ -47,6 +46,8 @@ void TeleopWidget::onInitialize()
 
   ask_for_help_subscriber_ = nh_->create_subscription<std_msgs::msg::Int16>(
       "/ask_for_help", rclcpp::QoS(10).reliable(), std::bind(&TeleopWidget::ask_for_help_callback, this, _1));
+
+  chat_publisher_ = nh_->create_publisher<std_msgs::msg::String>("/chat", rclcpp::QoS(10).reliable());
 }
 
 void TeleopWidget::ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -96,9 +97,17 @@ void TeleopWidget::clicked_main_btn()
   }
 }
 
-
 void TeleopWidget::clicked_chat_btn()
 {
+  // send text if chat_text_edit is not empty
+  if (!ui->chat_text_edit->toPlainText().isEmpty())
+  {
+    // Obtain text from ui->chat_text_edit and publish it
+    auto msg = std::make_shared<std_msgs::msg::String>();
+    msg->data = ui->chat_text_edit->toPlainText().toStdString();
+    chat_publisher_->publish(*msg);
+    ui->chat_text_edit->clear();
+  }
 }
 
 void TeleopWidget::start_auto()
