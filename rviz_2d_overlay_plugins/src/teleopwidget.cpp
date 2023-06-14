@@ -65,10 +65,10 @@ void TeleopWidget::tick()
   if (mode_ == Mode::TELEOP && twist_publisher_)
   {
     float vel_linear_max = 10.0;
-    float vel_angular_max = 2.0;
+    float vel_angular_max = 15.0;
     auto msg = std::make_shared<geometry_msgs::msg::Twist>();
-    msg->linear.x = -1 * vel_linear_max * (touch_->y_value);
-    msg->angular.z = -1 * vel_angular_max * (touch_->x_value);
+    msg->linear.x = -1.0 * vel_linear_max * (touch_->y_value);
+    msg->angular.z = -1.0 * vel_angular_max * (touch_->x_value);
     twist_publisher_->publish(*msg);
   }
 }
