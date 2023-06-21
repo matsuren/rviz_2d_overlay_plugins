@@ -9,8 +9,11 @@
 #include <QTimer>
 #include <std_msgs/msg/empty.hpp>
 #include <sensor_msgs/msg/joy.hpp>
+#include <dump_messages/msg/task_posting_req.hpp>
+#include <dump_messages/msg/task_posting_res.hpp>
 #include <memory>
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 namespace rviz_2d_overlay_plugins
 {
@@ -48,11 +51,59 @@ void TeleopWidget::onInitialize()
       "/ask_for_help", rclcpp::QoS(10).reliable(), std::bind(&TeleopWidget::ask_for_help_callback, this, _1));
 
   chat_publisher_ = nh_->create_publisher<std_msgs::msg::String>("/chat", rclcpp::QoS(10).reliable());
+
+  task_posting_res_subscriber_ = nh_->create_subscription<dump_messages::msg::TaskPostingRes>(
+      "/task_posting/res", rclcpp::QoS(10).reliable(), std::bind(&TeleopWidget::task_posting_res, this, _1));
+
+  task_publisher_ =
+      nh_->create_publisher<dump_messages::msg::TaskPostingReq>("/task_posting/req", rclcpp::QoS(10).reliable());
+
+  // Setup loading and disposal site
+  loading_sites_.resize(4);
+  disposal_sites_.resize(4);
+
+  ////////////////////////////////////////////
+  // TEST
+  // soil_hill_position
+  auto pt = geometry_msgs::msg::Point();
+  pt.x = 80.0;
+  pt.y = -85.0;
+  loading_sites_[0] = pt;
+  pt.x = 40.0;
+  pt.y = -25.0;
+  loading_sites_[1] = pt;
+  pt.x = 80.0;
+  pt.y = 35.0;
+  loading_sites_[2] = pt;
+  pt.x = 40.0;
+  pt.y = 95.0;
+  loading_sites_[3] = pt;
+  // dump_site_position
+  pt.x = -75.0;
+  pt.y = -115.0;
+  disposal_sites_[0] = pt;
+  pt.x = -75.0;
+  pt.y = -55.0;
+  disposal_sites_[1] = pt;
+  pt.x = -75.0;
+  pt.y = 5.0;
+  disposal_sites_[2] = pt;
+  pt.x = -75.0;
+  pt.y = 65.0;
+  disposal_sites_[3] = pt;
+
+  deadlines_.clear();
+  amount_of_sands_.clear();
+  for (size_t i = 0; i < disposal_sites_.size(); i++)
+  {
+    deadlines_.push_back(400.0);
+    amount_of_sands_.push_back(2500.0);
+  }
 }
 
 void TeleopWidget::ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg)
 {
-  RCLCPP_INFO(rclcpp::get_logger("rviz_plugin"), "Ask for help from dump: " + std::to_string(msg->data));
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Ask for help from dump: " + std::to_string(msg->data));
   ui->btn->setStyleSheet("QPushButton {background-color:  red}");
   ui->btn->setText("Start teleop mode");
   target_du_name_ = "/du_" + std::to_string(msg->data);
@@ -60,12 +111,64 @@ void TeleopWidget::ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr m
   ui->btn->setEnabled(true);
 }
 
+void TeleopWidget::task_posting_res(const dump_messages::msg::TaskPostingRes::SharedPtr msg)
+{
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Task posting Res" + std::to_string(msg->excavator_id));
+  excavator_scores_[msg->excavator_id] = msg->scores;
+  timer_.reset();
+  timer_ = nh_->create_wall_timer(std::chrono::milliseconds(500), std::bind(&TeleopWidget::timer_callback, this));
+}
+
+void TeleopWidget::timer_callback()
+{
+  timer_.reset();
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Timer callback");
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Scores: " + std::to_string(excavator_scores_.size()));
+
+  // Score is distance so find excavator with lowest score
+  auto msg_task = std::make_shared<dump_messages::msg::TaskPostingReq>();
+  msg_task->target_ids = {};
+  msg_task->deadlines = deadlines_;
+  msg_task->amount_of_sands = amount_of_sands_;
+  msg_task->dump_sites = disposal_sites_;
+  msg_task->load_sites = loading_sites_;
+  // Get target excavator ids
+  std::vector<int> excavator_ids;
+  for (auto& it : excavator_scores_)
+  {
+    excavator_ids.push_back(it.first);
+  }
+
+  // Find excavator with lowest score
+  for (size_t i = 0; i < disposal_sites_.size(); i++)
+  {
+    int best_id = -1;
+    float best_score = 10000000000.0f;
+    for (auto& it : excavator_scores_)
+    {
+      if (best_score > it.second[i])
+      {
+        best_score = it.second[i];
+        best_id = it.first;
+      }
+    }
+    msg_task->target_ids.push_back(best_id);
+    RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"),
+                "Best id: " + std::to_string(best_id) + " score: " + std::to_string(best_score));
+    excavator_scores_.erase(best_id);
+  }
+
+  task_publisher_->publish(*msg_task);
+
+  send_start_signal();
+}
+
 void TeleopWidget::tick()
 {
   if (mode_ == Mode::TELEOP && twist_publisher_)
   {
     float vel_linear_max = 10.0;
-    float vel_angular_max = 15.0;
+    float vel_angular_max = 30.0;
     auto msg = std::make_shared<geometry_msgs::msg::Twist>();
     msg->linear.x = -1.0 * vel_linear_max * (touch_->y_value);
     msg->angular.z = -1.0 * vel_angular_max * (touch_->x_value);
@@ -110,6 +213,19 @@ void TeleopWidget::clicked_chat_btn()
   }
 }
 
+void TeleopWidget::send_start_signal()
+{
+  rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_publisher_;
+  joy_publisher_ = nh_->create_publisher<sensor_msgs::msg::Joy>("/ex_000/cmd/joy", rclcpp::QoS(10).reliable());
+  auto msg = std::make_shared<sensor_msgs::msg::Joy>();
+  msg->buttons.resize(11);
+  msg->buttons[10] = 1;
+
+  joy_publisher_->publish(*msg);
+  rclcpp::sleep_for(500ms);
+  joy_publisher_->publish(*msg);
+}
+
 void TeleopWidget::start_auto()
 {
   ui->btn->setText("Auto mode");
@@ -121,13 +237,14 @@ void TeleopWidget::start_auto()
 
   if (mode_ == Mode::INACTIVE)
   {
-    rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_publisher_;
-
-    joy_publisher_ = nh_->create_publisher<sensor_msgs::msg::Joy>("/ex_000/cmd/joy", rclcpp::QoS(10).reliable());
-    auto msg = std::make_shared<sensor_msgs::msg::Joy>();
-    msg->buttons.resize(11);
-    msg->buttons[10] = 1;
-    joy_publisher_->publish(*msg);
+    auto msg_task = std::make_shared<dump_messages::msg::TaskPostingReq>();
+    msg_task->target_ids = {};  // Broadcast
+    msg_task->deadlines = deadlines_;
+    msg_task->amount_of_sands = amount_of_sands_;
+    msg_task->dump_sites = disposal_sites_;
+    msg_task->load_sites = loading_sites_;
+    task_publisher_->publish(*msg_task);
+    ui->status_line->setText(QString::fromStdString("Task request"));
   }
 
   mode_ = Mode::AUTO;

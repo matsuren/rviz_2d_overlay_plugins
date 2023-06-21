@@ -12,6 +12,8 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int16.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <dump_messages/msg/task_posting_req.hpp>
+#include <dump_messages/msg/task_posting_res.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -62,10 +64,27 @@ private:
   void ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg);
   std::string target_du_name_;
 
+  void task_posting_res(const dump_messages::msg::TaskPostingRes::SharedPtr msg);
+  void send_start_signal();
+
   // The ROS publisher for chat server.
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr chat_publisher_;
 
 
+  // The ROS publisher and subscriber for the task posting.
+  rclcpp::Publisher<dump_messages::msg::TaskPostingReq>::SharedPtr task_publisher_;
+  rclcpp::Subscription<dump_messages::msg::TaskPostingRes>::SharedPtr task_posting_res_subscriber_;
+  std::vector<geometry_msgs::msg::Point> loading_sites_;
+  std::vector<geometry_msgs::msg::Point> disposal_sites_;
+  std::vector<float> deadlines_;
+  std::vector<float> amount_of_sands_;
+
+  // Dictonary to save excavator id and its score
+  std::map<int, std::vector<float>> excavator_scores_;
+
+  // Timer for start signal
+  rclcpp::TimerBase::SharedPtr timer_;
+  void timer_callback();
 
   Mode mode_;
 };

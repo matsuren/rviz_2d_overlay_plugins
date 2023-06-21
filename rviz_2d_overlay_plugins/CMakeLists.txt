@@ -23,6 +23,7 @@ find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(std_msgs REQUIRED)
+find_package(dump_messages REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -71,6 +72,7 @@ ament_target_dependencies(
         rviz_rendering
         rviz_2d_overlay_msgs
         std_msgs
+        dump_messages
 )
 
 #ament_export_include_directories(include)
@@ -78,6 +80,7 @@ ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
         rviz_common
         rviz_ogre_vendor
+        dump_messages
 )
 
 install(
