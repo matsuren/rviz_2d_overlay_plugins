@@ -8,10 +8,12 @@
 #include <QLabel>
 #include <QTimer>
 #include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <dump_messages/msg/task_posting_req.hpp>
 #include <dump_messages/msg/task_posting_res.hpp>
 #include <memory>
+#include <chrono>
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
@@ -58,6 +60,8 @@ void TeleopWidget::onInitialize()
   task_publisher_ =
       nh_->create_publisher<dump_messages::msg::TaskPostingReq>("/task_posting/req", rclcpp::QoS(10).reliable());
 
+  current_time_publisher_ = nh_->create_publisher<std_msgs::msg::Float32>("/monitor/current_time", rclcpp::QoS(1).best_effort());
+
   // Setup loading and disposal site
   loading_sites_.resize(4);
   disposal_sites_.resize(4);
@@ -99,6 +103,7 @@ void TeleopWidget::onInitialize()
     deadlines_.push_back(400.0);
     amount_of_sands_.push_back(2500.0);
   }
+
 }
 
 void TeleopWidget::ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -115,13 +120,13 @@ void TeleopWidget::task_posting_res(const dump_messages::msg::TaskPostingRes::Sh
 {
   RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Task posting Res" + std::to_string(msg->excavator_id));
   excavator_scores_[msg->excavator_id] = msg->scores;
-  timer_.reset();
-  timer_ = nh_->create_wall_timer(std::chrono::milliseconds(500), std::bind(&TeleopWidget::timer_callback, this));
+  task_timer_.reset();
+  task_timer_ = nh_->create_wall_timer(std::chrono::milliseconds(500), std::bind(&TeleopWidget::task_timer_callback, this));
 }
 
-void TeleopWidget::timer_callback()
+void TeleopWidget::task_timer_callback()
 {
-  timer_.reset();
+  task_timer_.reset();
   RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Timer callback");
   RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Scores: " + std::to_string(excavator_scores_.size()));
 
@@ -213,8 +218,22 @@ void TeleopWidget::clicked_chat_btn()
   }
 }
 
+void TeleopWidget::clock_timer_callback(){
+  auto msg = std::make_shared<std_msgs::msg::Float32>();
+  auto now = std::chrono::steady_clock::now();
+  auto diff = now - start_time_;
+  msg->data = std::chrono::duration<float>(diff).count();
+  current_time_publisher_->publish(*msg);
+}
+
 void TeleopWidget::send_start_signal()
 {
+  // Start publishing current time
+  start_time_ = std::chrono::steady_clock::now();
+  clock_timer_ = nh_->create_wall_timer(std::chrono::milliseconds(500), std::bind(&TeleopWidget::clock_timer_callback, this));
+
+
+  // Send start signal
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_publisher_;
   joy_publisher_ = nh_->create_publisher<sensor_msgs::msg::Joy>("/ex_000/cmd/joy", rclcpp::QoS(10).reliable());
   auto msg = std::make_shared<sensor_msgs::msg::Joy>();

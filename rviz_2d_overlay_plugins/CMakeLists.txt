@@ -39,6 +39,7 @@ add_library(
         src/teleopwidget.cpp
         src/teleopwidget.ui
         src/touchwidget.cpp
+        src/time_pie_chart.cpp
 )
 
 target_include_directories(

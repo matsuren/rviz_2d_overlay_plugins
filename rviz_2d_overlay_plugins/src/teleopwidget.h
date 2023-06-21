@@ -11,9 +11,11 @@
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int16.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <dump_messages/msg/task_posting_req.hpp>
 #include <dump_messages/msg/task_posting_res.hpp>
+#include <chrono>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -83,8 +85,15 @@ private:
   std::map<int, std::vector<float>> excavator_scores_;
 
   // Timer for start signal
-  rclcpp::TimerBase::SharedPtr timer_;
-  void timer_callback();
+  rclcpp::TimerBase::SharedPtr task_timer_;
+  void task_timer_callback();
+
+  // Current time publisher
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr current_time_publisher_;
+  std::chrono::steady_clock::time_point start_time_;
+  rclcpp::TimerBase::SharedPtr clock_timer_;
+  void clock_timer_callback();
+
 
   Mode mode_;
 };

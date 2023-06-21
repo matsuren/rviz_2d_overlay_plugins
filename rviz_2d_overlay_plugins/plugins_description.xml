@@ -24,6 +24,16 @@
         <message_type>std_msgs/msg/Float32</message_type>
     </class>
 
+    <class name="rviz_2d_overlay_plugins/TimePieChart"
+           type="rviz_2d_overlay_plugins::TimePieChart"
+           base_class_type="rviz_common::Display">
+        <description>
+            Show time chart.
+        </description>
+        <message_type>std_msgs/msg/Float32</message_type>
+    </class>
+
+
     <class name="rviz_2d_overlay_plugins/TeleopPanel"
            type="rviz_2d_overlay_plugins::TeleopWidget"
            base_class_type="rviz_common::Panel">
