@@ -62,6 +62,10 @@ void TeleopWidget::onInitialize()
 
   current_time_publisher_ = nh_->create_publisher<std_msgs::msg::Float32>("/monitor/current_time", rclcpp::QoS(1).best_effort());
 
+
+  load_dump_sites_subscriber_ = nh_->create_subscription<dump_messages::msg::TaskPostingReq>(
+      "/monitor/load_dump_sites", rclcpp::QoS(10).reliable(), std::bind(&TeleopWidget::load_dump_sites_callback, this, _1));
+
   // Setup loading and disposal site
   loading_sites_.resize(4);
   disposal_sites_.resize(4);
@@ -104,6 +108,16 @@ void TeleopWidget::onInitialize()
     amount_of_sands_.push_back(2500.0);
   }
 
+}
+
+void TeleopWidget::load_dump_sites_callback(const dump_messages::msg::TaskPostingReq::SharedPtr msg)
+{
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "Load dump sites callback");
+  loading_sites_ = msg->load_sites;
+  disposal_sites_ = msg->dump_sites;
+  RCLCPP_INFO(rclcpp::get_logger("TeleopWidget"), "loading_sites_ length:" + std::to_string(loading_sites_.size()));
+  // deadlines_ = msg->deadlines;
+  // amount_of_sands_ = msg->amount_of_sands;
 }
 
 void TeleopWidget::ask_for_help_callback(const std_msgs::msg::Int16::SharedPtr msg)

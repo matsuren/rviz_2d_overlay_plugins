@@ -94,6 +94,10 @@ private:
   rclcpp::TimerBase::SharedPtr clock_timer_;
   void clock_timer_callback();
 
+  // From chatbot
+  rclcpp::Subscription<dump_messages::msg::TaskPostingReq>::SharedPtr load_dump_sites_subscriber_;
+  void load_dump_sites_callback(const dump_messages::msg::TaskPostingReq::SharedPtr msg);
+
 
   Mode mode_;
 };
